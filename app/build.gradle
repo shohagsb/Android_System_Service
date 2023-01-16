@@ -8,7 +8,7 @@ android {
     compileSdk 33
 
     defaultConfig {
-        applicationId "me.shohag.backgrondapicall"
+        applicationId "me.shohag.system_service_events"
         minSdk 21
         targetSdk 33
         versionCode 1
