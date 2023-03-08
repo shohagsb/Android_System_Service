@@ -366,5 +366,6 @@ class AppBackgroundService : LifecycleService() {
         const val CHANNEL_ID =
             "app_Background" // regular notification when apps start or start service(turn on) button push
         const val FOREGROUND_NOTIFICATION_ID = 1
+        const val ACTION_START_SERVICE = "ACTION_START_OR_RESUME_SERVICE"
     }
 }

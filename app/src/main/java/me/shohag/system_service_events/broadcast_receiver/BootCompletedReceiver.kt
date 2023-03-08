@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import me.shohag.system_service_events.service.AppBackgroundService
 
 open class BootCompletedReceiver : BroadcastReceiver() {
 
@@ -14,6 +15,9 @@ open class BootCompletedReceiver : BroadcastReceiver() {
                 Toast.makeText(
                     context, "BOOT-COMPLETED", Toast.LENGTH_SHORT
                 ).show()
+                context?.startService(Intent(context, AppBackgroundService::class.java).apply {
+                    this.action = AppBackgroundService.ACTION_START_SERVICE
+                })
             }
         }
 
