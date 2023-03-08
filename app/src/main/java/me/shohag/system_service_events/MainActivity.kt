@@ -28,7 +28,7 @@ import me.shohag.system_service_events.utils.Constants.ACTION_STOP_SERVICE
 
 class MainActivity : AppCompatActivity() {
     private lateinit var _binding: ActivityMainBinding
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,14 +36,28 @@ class MainActivity : AppCompatActivity() {
         setContentView(_binding.root)
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU) {
-            requestPermissionLauncher =
-                registerForActivityResult(
-                    ActivityResultContracts.RequestPermission()
-                ) { isGranted: Boolean ->
-                    if (!isGranted) {
+            requestPermissionLauncher = registerForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions()
+            ) { permissions ->
+                when {
+                    permissions.getOrDefault(Manifest.permission.POST_NOTIFICATIONS, false) -> {
+                        // Precise location access granted.
+//                            if (!isGranted) {
+//                            }
+
+                    }
+                    permissions.getOrDefault(
+                        Manifest.permission.PACKAGE_USAGE_STATS, false
+                    ) -> {
+                        // Only approximate location access granted.
+                    }
+                    else -> {
+                        // No location access granted.
                         showExplanation(_binding.root)
                     }
                 }
+
+            }
             checkPermissions()
         }
 
@@ -79,7 +93,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun clearLogs(){
+    private fun clearLogs() {
         AppBackgroundService.logEventList.clear()
         AppBackgroundService.logEvents.postValue(AppBackgroundService.logEventList)
     }
@@ -97,23 +111,19 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun startBackgroundService() {
-        startService(
-            Intent(
-                this@MainActivity,
-                AppBackgroundService::class.java
-            ).apply {
-                this.action = ACTION_START_SERVICE
-            })
+        startService(Intent(
+            this@MainActivity, AppBackgroundService::class.java
+        ).apply {
+            this.action = ACTION_START_SERVICE
+        })
     }
 
     private fun stopBackgroundService() {
-        startService(
-            Intent(
-                this@MainActivity,
-                AppBackgroundService::class.java
-            ).apply {
-                this.action = ACTION_STOP_SERVICE
-            })
+        startService(Intent(
+            this@MainActivity, AppBackgroundService::class.java
+        ).apply {
+            this.action = ACTION_STOP_SERVICE
+        })
 
     }
 
@@ -123,9 +133,7 @@ class MainActivity : AppCompatActivity() {
             Context.ACTIVITY_SERVICE
         ) as ActivityManager
 
-        for (service: ActivityManager
-        .RunningServiceInfo in manager
-            .getRunningServices(Integer.MAX_VALUE)) {
+        for (service: ActivityManager.RunningServiceInfo in manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.name.equals(service.service.className)) {
                 return true
             }
@@ -147,23 +155,32 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun isPermissionApproved(): Boolean {
         return ContextCompat.checkSelfPermission(
-            this@MainActivity,
-            Manifest.permission.POST_NOTIFICATIONS
+            this@MainActivity, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+            this@MainActivity, Manifest.permission.PACKAGE_USAGE_STATS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun isPackageUsagePermissionApproved(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this@MainActivity, Manifest.permission.PACKAGE_USAGE_STATS
         ) == PackageManager.PERMISSION_GRANTED
     }
 
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestNotificationPermissions() {
-        if (isPermissionApproved())
-            return
-        requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (isPermissionApproved()) return
+        requestPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.PACKAGE_USAGE_STATS
+            )
+        )
     }
 
     private fun showExplanation(view: View) {
         val snackBar = Snackbar.make(
-            view, R.string.notification_permission_explanation,
-            Snackbar.LENGTH_LONG
+            view, R.string.notification_permission_explanation, Snackbar.LENGTH_LONG
         ).setAction(R.string.settings) {
             startActivity(Intent().apply {
                 action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
